@@ -23,7 +23,7 @@ const usersController = {
 			return res.status(401).json({ message: 'Invalid credentials' });
 		}
 
-		const token = jwt.sign({ id: user.id }, 'taskmgtkey', { expiresIn: '1h' });
+		const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 		res.json({ token });
 	}
 }

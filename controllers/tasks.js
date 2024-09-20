@@ -2,17 +2,18 @@ const User = require('../models/User');
 const Task = require('../models/Task');
 
 const tasksController = {
-	//////////////////// BELOW are no needed for now //////////////
-	// canAct: (task, req, res) => {
-	// 	if (!task || task.UserId !== req.user.id) {
-	// 		return res.status(403).json({ message: 'Unauthorized' });
-	// 	}
-	// },
+	canAct: async (req, task) => {
+		const isAdmin = await tasksController.isAdmin(req);
+		return !(!task || (!isAdmin && task.UserId !== req.user.id));
+	},
 
-	// setTask: async (req) => {
-	// 	return await Task.findByPk(req.params.id);
-	// },
-	//////////////////// ABOVE are no needed for now //////////////
+	setTask: async (req) => {
+		const task = await Task.findByPk(req.params.id);
+		const canAct = await tasksController.canAct(req, task);
+		if(!canAct) return false;
+
+		return task;
+	},
 
 	isAdmin: async (req) => {
 		const user = await User.findByPk(req.user.id);
@@ -43,34 +44,19 @@ const tasksController = {
 	},
 
 	getTaskById: async (req, res) => {
-		const task = await Task.findByPk(req.params.id);
-		if (!task) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}	
-		const isAdmin = await tasksController.isAdmin(req);
-
-		console.log("isAdmin", isAdmin)
-		if (!isAdmin && task.UserId !== req.user.id) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}
+		const task = await tasksController.setTask(req);
+		if(!task) return res.status(403).json({ message: 'Unauthorized' });
 
 		res.json(task);
 	},
 
 	updateTaskById: async (req, res) => {
+		const task = await tasksController.setTask(req);
+		if(!task) return res.status(403).json({ message: 'Unauthorized' });
+
 		const { title, description, priority, dueDate, status } = req.body;
-
-		const task = await Task.findByPk(req.params.id);
-		if (!task) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}	
-		const isAdmin = await tasksController.isAdmin(req);
-		if (!isAdmin && task.UserId !== req.user.id) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}
-
 		try {
-			await task.update({ title, description, priority, dueDate, status, UserId: req.user.id });
+			await task.update({ title, description, priority, dueDate, status });
 			res.json(task);
 		} catch (error) {
 			res.status(400).json({ error: error.message });
@@ -78,15 +64,8 @@ const tasksController = {
 	},
 
 	destroyTaskById: async (req, res) => {
-		const task = await Task.findByPk(req.params.id);
-		
-		if (!task) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}	
-		const isAdmin = await tasksController.isAdmin(req);
-		if (!isAdmin && task.UserId !== req.user.id) {
-			return res.status(403).json({ message: 'Unauthorized' });
-		}
+		const task = await tasksController.setTask(req);
+		if(!task) return res.status(403).json({ message: 'Unauthorized' });
 
 		try {
 			await task.destroy();

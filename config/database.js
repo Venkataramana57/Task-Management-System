@@ -1,7 +1,10 @@
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize('task_management', 'username', 'Password@123', {
-  host: 'localhost',
+require('dotenv').config();
+const { DB_USERNAME, DB_PASSWORD, DB_NAME, DB_HOST } = process.env
+
+const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
+  host: DB_HOST,
   dialect: 'mysql',
 });
 
